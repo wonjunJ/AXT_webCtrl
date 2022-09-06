@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.5.1/dist/chart.min.js"></script>
+</head>
+<body>
+<h1 id="head">
+    {{ status }}
+</h1>
+<p>AXIS NUM: {{ axis }}</p>
+<p>ACCEL: {{ accel }}</p>
+<div>
+    <button type="button" style="height: 50px; width: 100px;" onclick="location.href='servoff/';">
+        servoOff
+    </button>
+    <button type="button" style="height: 50px; width: 100px; margin-left: 20px" id="move">
+        move
+    </button>
+</div>
+    <button type="button" id="estop" style="height: 50px; width: 100px; margin-top: 20px">
+        Estop
+    </button>
+<div>
+    <p id="cmd_pos">
+        <comment style="margin-right: 10px">
+        CMD POS:
+        </comment>
+        0
+    </p>
+    <p id="act_pos">
+        <comment style="margin-right: 10px">
+        ACT POS:
+        </comment>
+        0
+    </p>
+    <p id="cmd_vel">
+        <comment style="margin-right: 10px">
+        CMD VEL:
+        </comment>
+        0
+    </p>
+</div>
+<div style="width: 1200px; height: 900px;">
+	<!--차트가 그려질 부분-->
+	<canvas id="myChart"></canvas>
+</div>
+<script type="text/javascript">
+    let chatSocket = new WebSocket(
+        `ws://172.16.10.74:8000/AXTctrl/ctrldetail/`
+    );
+
+    chatSocket.onerror = () =>{
+        console.log('연결에러')
+    }
+
+    let cPos;
+    let aPos;
+    let vel;
+    let data_arr = [];
+    let i = 0;
+    let k = 0;
+
+    chatSocket.onmessage = (e) => {
+        let data = JSON.parse(e.data);
+        cPos = data[0];
+        if(data_arr.length <= 200){
+            data_arr.push(cPos);
+        }else{
+            data_arr.splice(0, 200);
+        }
+        aPos = data[1];
+        vel = data[2];
+        vel = Math.floor(vel);
+        document.getElementById('cmd_pos').innerHTML = "CMD POS:       " + cPos;
+        document.getElementById('act_pos').innerHTML = "ACT POS:       " + aPos;
+        document.getElementById('cmd_vel').innerHTML = "CMD VEL:       " + vel;
+    };
+
+    let intervalId;
+    let intervalId2;
+    function loop(){
+        //let start = new Date();
+        intervalId = setInterval(() => chatSocket.send(JSON.stringify({ 'num' : 1 })), 50);
+        //let end = new Date();
+        //console.log(end-start);
+    }
+    function loop2(){
+        intervalId2 = setInterval(() => chatSocket.send(JSON.stringify({ 'num' : 2 })), 50);
+    }
+
+    document.querySelector("#move").addEventListener("click", (e) => {
+        document.getElementById('head').innerHTML = "작동중";
+        clearInterval(intervalId2);
+        if(k == 0){
+            loop();
+            k = 1;
+        }
+    });
+
+    document.querySelector("#estop").addEventListener("click", (e) => {
+        document.getElementById('head').innerHTML = "중지";
+        clearInterval(intervalId);
+        if(k == 1){
+            loop2();
+            k = 0;
+        }
+        document.getElementById('cmd_vel').innerHTML = "CMD VEL:       " + "0";
+        //chatSocket.send(JSON.stringify({
+        //    'num' : 2
+        //}));
+        //k = 0;
+    });
+
+    let chartArea = document.getElementById('myChart').getContext('2d');
+    // 차트를 생성한다.
+    let myChart = new Chart(chartArea, {
+        type: 'line',
+        data: {
+            labels: [...Array(200).keys()],
+            datasets: [{
+                label: 'CMD_POS Graph',
+                data: data_arr,
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            animation: 0,
+            //축에 관한 설정(Object)
+            scales: {
+                //y축에 대한 설정(Object)
+                y: {
+                    beginAtZero: true,
+                    min: 0,
+                    stepSize: 200,
+                }
+            }
+        }
+    });
+    setInterval(() => myChart.update(), 50);
+
+</script>
+
+</body>
+</html>

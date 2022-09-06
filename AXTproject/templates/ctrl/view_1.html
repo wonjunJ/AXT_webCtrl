@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MotionCtrl Web</title>
+
+</head>
+<body>
+<h1 style="margin-left: 50px;">
+    모션제어
+</h1>
+<form action="{% url 'AXTctrl:status' %}" method="post">
+    {% csrf_token %}
+    <div>
+        <div style="float: left; width: 250px; margin: 20px;">
+            <p>축 번호 지정
+                <select style="width: 60px;" name="axisnum">
+                <option value="0" selected>0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+            <button if="servo_on" type="submit"
+                    style="background-color: rgb(200, 200, 50); border-color: rgb(200, 200, 50); border-radius: 5px">
+                servoOn
+            </button>
+            </p>
+            <p>속도
+                <textarea name="vel" id="vel" rows="1" cols="14">100</textarea>
+            </p>
+            <p>가(감)속도
+                <textarea name="accel" id="accel" rows="1" cols="8">1000</textarea>
+            </p>
+        </div>
+        <div style="float: left; margin: 35px;">
+            <button type="reset">servoOff</button>
+        </div>
+    </div>
+</form>
+
+</body>
+</html>
